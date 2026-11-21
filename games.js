@@ -29,7 +29,7 @@ export function openGames(ctx){
  let cleanup=[],currentId=null,currentGame=null,drawPoints=null,secret=null;
  const stop=()=>{cleanup.forEach(f=>{try{f()}catch{}});cleanup=[]};
  const on=(q,success)=>{const off=fs.onSnapshot(q,success,e=>status('Jeux : '+e.message,true));cleanup.push(off)};
- const screen=markup=>{stop();html(markup);setCleanup(stop)};
+ const screen=markup=>{stop();clearChild();html(markup);setCleanup(()=>{stop();clearChild()})};
  const back='<a href="#group/'+encodeURIComponent(groupId)+'" class="subtle">← Retour au groupe</a>';
  const error=e=>{console.error(e);status('Jeux : '+(e?.message||e),true)};
  const shell=(title,body,sub='')=>back+'<section class="game-hero"><p class="eyebrow">LA RÉCRÉ</p><h1>'+escape(title)+'</h1><p>'+escape(sub)+'</p></section>'+body;
