@@ -2,6 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    // Each Google user can list only their own saved event references.
+    match /users/{userId}/events/{eventId} {
+      allow get, list: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['eventId', 'role', 'addedAt'])
+        && request.resource.data.eventId == eventId
+        && request.resource.data.role in ['creator', 'participant']
+        && exists(/databases/$(database)/documents/events/$(eventId));
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
     match /events/{eventId} {
       allow create: if signedIn() && request.resource.data.keys().hasOnly(['title','startDate','endDate','createdBy','createdAt']) && request.resource.data.createdBy == request.auth.uid && request.resource.data.title is string && request.resource.data.title.size() <= 90;
       allow get: if signedIn();
