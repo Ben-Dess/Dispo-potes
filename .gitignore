@@ -1,0 +1,21 @@
+# Local-only environment, secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ecdsa*
+id_ed25519*
+service-account*.json
+service_account*.json
+firebase-admin*.json
+*-adminsdk-*.json
+credentials*.json
+secrets*.json
+node_modules/
+.DS_Store
