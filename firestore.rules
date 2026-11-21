@@ -14,6 +14,31 @@ service cloud.firestore {
       return signedIn() &&
         get(/databases/$(database)/documents/events/$(eventId)).data.createdBy == request.auth.uid;
     }
+    // Shared 2D avatar presets, no third-party photos or personal data.
+    match /profiles/{profileId} {
+      allow get: if signedIn();
+      allow list, delete: if false;
+      allow create, update: if signedIn() && request.auth.uid == profileId
+        && request.resource.data.keys().hasOnly(['avatar','updatedAt'])
+        && request.resource.data.avatar is map
+        && request.resource.data.avatar.keys().hasAll(['skin','hair','shirt','style','eyes'])
+        && request.resource.data.avatar.keys().hasOnly(['skin','hair','shirt','style','eyes'])
+        && request.resource.data.avatar.skin is int
+        && request.resource.data.avatar.skin >= 0
+        && request.resource.data.avatar.skin < 5
+        && request.resource.data.avatar.hair is int
+        && request.resource.data.avatar.hair >= 0
+        && request.resource.data.avatar.hair < 6
+        && request.resource.data.avatar.shirt is int
+        && request.resource.data.avatar.shirt >= 0
+        && request.resource.data.avatar.shirt < 6
+        && request.resource.data.avatar.style is int
+        && request.resource.data.avatar.style >= 0
+        && request.resource.data.avatar.style < 4
+        && request.resource.data.avatar.eyes is int
+        && request.resource.data.avatar.eyes >= 0
+        && request.resource.data.avatar.eyes < 3;
+    }
     match /users/{userId}/groups/{groupId} {
       allow read, delete: if signedIn() && userId == request.auth.uid;
       allow create, update: if signedIn() && userId == request.auth.uid &&
