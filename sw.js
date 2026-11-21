@@ -1,4 +1,4 @@
-const CACHE='dispopotes-shell-v5-avatar-studio';
+const CACHE='dispopotes-shell-v6-startup-diagnostics';
 const APP_FILES=['./','./index.html','./games.js','./icon.svg','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP_FILES)));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
@@ -9,5 +9,5 @@ self.addEventListener('fetch',event=>{
  event.respondWith(fetch(request).then(response=>{
    if(response.ok&&request.url.endsWith('/index.html')){const copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy))}
    return response
- }).catch(()=>caches.match(request).then(x=>x||caches.match('./index.html'))));
+ }).catch(()=>caches.match(request).then(x=>x||(request.mode==='navigate'?caches.match('./index.html'):Response.error()))));
 });
