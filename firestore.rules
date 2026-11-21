@@ -32,7 +32,8 @@ service cloud.firestore {
         request.resource.data.name.size() <= 60;
       match /members/{memberId} {
         // A group invite URL contains an unguessable group id.
-        allow read: if signedIn();
+        allow get: if signedIn() && (memberId == request.auth.uid || groupMember(groupId));
+        allow list: if groupMember(groupId);
         allow create: if signedIn() && memberId == request.auth.uid &&
           exists(/databases/$(database)/documents/groups/$(groupId)) &&
           request.resource.data.keys().hasOnly(['name', 'role', 'joinedAt']) &&
