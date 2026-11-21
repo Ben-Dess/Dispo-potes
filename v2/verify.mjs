@@ -11,6 +11,10 @@ const target=join(tmpdir(),'dispopotes-check.mjs');
 writeFileSync(target, match[1]);
 execFileSync(process.execPath,['--check',target],{stdio:'inherit'});
 execFileSync(process.execPath,['--check','sw.js'],{stdio:'inherit'});
+execFileSync(process.execPath,['--check','games.js'],{stdio:'inherit'});
+const games=readFileSync('games.js','utf8');
+for(const token of ['Shifumi Arena','Qui dans la bande ?','Dessine & Devine','openGames','drawCanvas','readyIds'])assert.ok(games.includes(token),'Missing mini-game feature: '+token);
+
 
 for(const token of [
  'showGroup','showEvent','showLegacyEvent','showLegacyList','watchEvent',
