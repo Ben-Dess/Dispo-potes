@@ -110,12 +110,30 @@ if(owner){$('addActivity').onsubmit=async e=>{e.preventDefault();const title=$('
 $('details').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const data={description:String(fd.get('description')||'').slice(0,2000),location:String(fd.get('location')||'').slice(0,250),startTime:String(fd.get('startTime')||''),budget:String(fd.get('budget')||'').slice(0,35)};try{await fs.updateDoc(fs.doc(db,'events',event.id),{...data,updatedAt:fs.serverTimestamp()});Object.assign(event,data);status('Informations enregistrées.')}catch(err){status(err.message,true)}};
 $('confirm').onsubmit=async e=>{e.preventDefault();const date=$('confirmedDate').value;try{await fs.updateDoc(fs.doc(db,'events',event.id),{confirmedDate:date,status:'confirmed',updatedAt:fs.serverTimestamp()});event.confirmedDate=date;event.status='confirmed';renderEvent();status('Date confirmée.')}catch(err){status(err.message,true)}};
 if($('unconfirm'))$('unconfirm').onclick=async()=>{try{await fs.updateDoc(fs.doc(db,'events',event.id),{confirmedDate:null,status:'planning',updatedAt:fs.serverTimestamp()});event.confirmedDate=null;event.status='planning';renderEvent()}catch(err){status(err.message,true)}}}
-drawCal();drawRank();drawPeople();drawVotes()}
+drawCal();drawRank();drawPeople();drawVotes();watchEvent(event.id)}
 async function setName(){const name=$('firstName').value.trim();if(!name){status('Entre un prénom.',true);return false}const p=participants[uid]||{};try{await put('events/'+event.id+'/participants/'+uid,{name,availability:p.availability||Object.fromEntries((p.dates||[]).map(d=>[d,'available']))});participants[uid]={...p,name,availability:p.availability||Object.fromEntries((p.dates||[]).map(d=>[d,'available']))};drawPeople();drawRank();status('Prénom enregistré.');return true}catch(e){status(e.message,true);return false}}
 function drawCal(){$('calTitle').textContent=monthText(calYear,calMonth);const el=$('calendar');el.innerHTML='';for(const d of ['L','M','M','J','V','S','D'])el.innerHTML+='<span class="weekday">'+d+'</span>';const offset=(new Date(calYear,calMonth,1).getDay()+6)%7;for(let i=0;i<offset;i++)el.append(document.createElement('span'));const max=new Date(calYear,calMonth+1,0).getDate();for(let i=1;i<=max;i++){const date=iso(calYear,calMonth,i),valid=date>=event.startDate&&date<=event.endDate,active=availOf(participants[uid]||{},date);const b=document.createElement('button');b.className='day'+(!valid?' off':'')+(active?' '+active:'');b.textContent=i;b.disabled=!valid;b.title=active||'Sans réponse';b.onclick=async()=>{if(saving)return;if(!participants[uid]?.name){const ok=await setName();if(!ok)return}saving=true;const p=participants[uid],a={...(p.availability||Object.fromEntries((p.dates||[]).map(d=>[d,'available'])))};const next={null:'available',available:'maybe',maybe:'unavailable',unavailable:null}[a[date]||'null'];if(next)a[date]=next;else delete a[date];const old={...p};participants[uid]={...p,availability:a};drawCal();drawRank();try{await put('events/'+event.id+'/participants/'+uid,{name:p.name,availability:a})}catch(e){participants[uid]=old;drawCal();drawRank();status(e.message,true)}finally{saving=false}};el.append(b)}}
 function drawPeople(){$('people').innerHTML=Object.keys(participants).length?Object.values(participants).map(p=>'<span class="pill" style="margin:3px">'+esc(p.name)+'</span>').join(''):'Aucune réponse pour le moment.'}
 function drawRank(){const members=Object.values(participants);if(!members.length){$('rank').textContent='Aucune disponibilité renseignée.';return}const ranked=days(event.startDate,event.endDate).map(date=>({date,yes:members.filter(p=>availOf(p,date)==='available').length,maybe:members.filter(p=>availOf(p,date)==='maybe').length})).filter(x=>x.yes||x.maybe).sort((a,b)=>b.yes-a.yes||b.maybe-a.maybe||a.date.localeCompare(b.date));$('rank').innerHTML=ranked.slice(0,20).map(x=>'<div class="result"><div class="row"><b>'+fmt(x.date)+'</b><span class="subtle">'+x.yes+' oui · '+x.maybe+' peut-être / '+members.length+'</span></div><div class="bar"><i style="background:#285c44;width:'+(x.yes/members.length*100)+'%"></i><i style="background:#e7bf63;width:'+(x.maybe/members.length*100)+'%"></i></div></div>').join('')||'Aucune date proposée pour le moment.'}
 function drawVotes(){const mine=votes[uid]?.activityIds||[];const el=$('activities');if(!activities.length){el.innerHTML='<p class="subtle">Aucune activité proposée pour le moment.</p>';return}el.innerHTML='<p class="subtle">Tu peux voter pour plusieurs activités.</p>'+activities.map(a=>{const n=Object.values(votes).filter(v=>(v.activityIds||[]).includes(a.id)).length;return '<label class="vote-label"><input type="checkbox" data-activity="'+esc(a.id)+'" '+(mine.includes(a.id)?'checked':'')+'><span>'+esc(a.title)+'</span><small>'+n+' vote(s)</small></label>'}).join('');el.querySelectorAll('input[data-activity]').forEach(c=>c.onchange=async()=>{const ids=[...el.querySelectorAll('input[data-activity]:checked')].map(x=>x.dataset.activity);try{await put('events/'+event.id+'/votes/'+uid,{activityIds:ids,updatedAt:fs.serverTimestamp()});votes[uid]={activityIds:ids};drawVotes()}catch(e){status(e.message,true)}})}
+function watchEvent(id){
+ const unsubs=[];
+ const fail=e=>status('Synchronisation interrompue : '+e.message,true);
+ unsubs.push(fs.onSnapshot(fs.collection(db,'events',id,'participants'),snap=>{
+   if(event?.id!==id||!$('calendar'))return;
+   const latest={};snap.forEach(d=>latest[d.id]=d.data());
+   if(!saving){participants=latest;drawCal();drawPeople();drawRank()}
+ },fail));
+ unsubs.push(fs.onSnapshot(fs.collection(db,'events',id,'activities'),snap=>{
+   if(event?.id!==id||!$('activities'))return;
+   activities=snap.docs.map(d=>({id:d.id,...d.data()}));drawVotes()
+ },fail));
+ unsubs.push(fs.onSnapshot(fs.collection(db,'events',id,'votes'),snap=>{
+   if(event?.id!==id||!$('activities'))return;
+   votes={};snap.forEach(d=>votes[d.id]=d.data());drawVotes()
+ },fail));
+ unsubscribe=()=>unsubs.forEach(fn=>fn());
+}
 async function refreshAndDraw(){await refreshEventData(event.id);renderEvent()}
 await init();
 </script></body></html>
