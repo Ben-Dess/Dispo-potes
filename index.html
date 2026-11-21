@@ -168,7 +168,7 @@ a.item:hover{background:#eee5ff}
 .vote-count{font-size:11px;white-space:nowrap;color:#4f3c7a}
 @media(max-width:680px){.profile-link{font-size:11px;padding:8px}.vote-card{padding:10px 8px;gap:7px}.vote-name{font-size:13px}.vote-count{font-size:10px}.leader-label{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.vote-card,.vote-meter>span{transition:none}}
-</style></head>
+.event-card-emoji.avatar-event{background:#fff;border-radius:18px;transform:rotate(-5deg);overflow:hidden}.event-card-emoji.avatar-event svg{max-width:100%;max-height:100%}</style></head>
 <body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><a id="profileLink" href="#profile" class="profile-link hide" aria-label="Personnaliser mon avatar">Mon avatar</a><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
 <script type="module">
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}),monthText=(y,m)=>new Date(y,m,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}),iso=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -278,7 +278,7 @@ const evs=all.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.startDate.local
 const today=iso(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
 const past=evs.filter(x=>(x.confirmedDate||x.endDate)<today);
 const upcoming=evs.filter(x=>!past.includes(x));
-const card=e=>'<a class="event-card" href="#event/'+encodeURIComponent(e.id)+'" aria-label="Ouvrir et gérer la sortie '+esc(e.title)+'"><span class="event-card-emoji" aria-hidden="true">🎉</span><span class="event-card-body"><strong>'+esc(e.title)+'</strong><small>'+fmt(e.confirmedDate||e.startDate)+'</small><span class="pill '+(e.status==='confirmed'?'good':'warn')+'">'+(e.status==='confirmed'?'✓ Confirmée':'✦ En préparation')+'</span></span><span class="event-card-action">Gérer <span aria-hidden="true">↗</span></span></a>';
+const card=e=>'<a class="event-card" href="#event/'+encodeURIComponent(e.id)+'" aria-label="Ouvrir et gérer la sortie '+esc(e.title)+'"><span class="event-card-emoji avatar-event" aria-hidden="true">'+avatarOf(e.createdBy,46)+'</span><span class="event-card-body"><strong>'+esc(e.title)+'</strong><small>'+fmt(e.confirmedDate||e.startDate)+'</small><span class="pill '+(e.status==='confirmed'?'good':'warn')+'">'+(e.status==='confirmed'?'✓ Confirmée':'✦ En préparation')+'</span></span><span class="event-card-action">Gérer <span aria-hidden="true">↗</span></span></a>';
 $('groupEvents').innerHTML=upcoming.map(card).join('')||'<p class="subtle">Pas de sortie à venir.</p>';
 $('pastEvents').innerHTML=past.map(e=>card(e)+'<button class="btn secondary small" data-repeat="'+esc(e.id)+'">Recréer cette sortie</button>').join('')||'<p class="subtle">Aucune sortie passée.</p>';
 $('pastEvents').querySelectorAll('[data-repeat]').forEach(b=>b.onclick=()=>{
