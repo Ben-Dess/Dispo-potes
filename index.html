@@ -333,7 +333,7 @@ async function showGames(id){
  const docs=await list('groups/'+id+'/members');
  const members=Object.fromEntries(docs.map(m=>[m.id,m]));
  await loadProfiles(docs.map(m=>m.id));
- const module=await import('./games.js');
+ const module=await import('./games.js?v=20261121-2');
  module.openGames({fs,db,uid,groupId:id,members,avatarOf,html,status,setCleanup:fn=>{unsubscribe=fn}});
 }
 async function showLegacyList(){
