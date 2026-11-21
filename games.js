@@ -232,7 +232,14 @@ export function openGames(ctx){
    canvas.onpointerup=async()=>{
      if(!drawing)return;drawing=false;const out=points;points=[];
      if(!out.length)return;
-     try{await fs.addDoc(col(gamePath(game.id)+'/strokes'),{userId:uid,points:out,createdAt:fs.serverTimestamp()})}catch(e){error(e);paint(canvas,strokes)}
+     try{
+       // Normalize every coordinate at the write boundary, even if an old session supplied tuples.
+       const safePoints=out.slice(0,100).map(p=>({
+         x:Math.max(0,Math.min(1000,Math.round(Number(Array.isArray(p)?p[0]:p.x)||0))),
+         y:Math.max(0,Math.min(1000,Math.round(Number(Array.isArray(p)?p[1]:p.y)||0)))
+       }));
+       await fs.addDoc(col(gamePath(game.id)+'/strokes'),{userId:uid,points:safePoints,createdAt:fs.serverTimestamp()});
+     }catch(e){error(e);paint(canvas,strokes)}
    };
    canvas.onpointercancel=()=>{drawing=false;points=[];paint(canvas,strokes)};
  }
