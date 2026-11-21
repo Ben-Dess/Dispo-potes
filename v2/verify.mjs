@@ -24,6 +24,15 @@ for(const token of [
  'Recréer cette sortie','installApp','join/'
 ]) assert.ok(html.includes(token),'Missing feature: '+token);
 
+// Ensure avatar studio and group photo remain available after releases.
+for(const token of ['avatar-motion-','groupPhotoSvg','downloadGroupPhoto','group-photo-panel',"choices('face'", "choices('outfit'", "choices('mouth'"]){
+ assert.ok(html.includes(token),'Missing avatar feature: '+token);
+}
+const avatarRules=readFileSync('firestore.rules','utf8');
+for(const field of ['accessory','face','brows','nose','mouth','outfit','motion']){
+ assert.ok(avatarRules.includes("'"+field+"' in request.resource.data.avatar"),'Missing avatar validation: '+field);
+}
+
 const manifest=JSON.parse(readFileSync('manifest.webmanifest','utf8'));
 assert.equal(manifest.display,'standalone');
 assert.ok(manifest.start_url.startsWith('./'));
