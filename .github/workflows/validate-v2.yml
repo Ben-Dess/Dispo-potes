@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/v2-foundations]
+    branches: [main, feature/v2-foundations]
 permissions:
   contents: read
 jobs:
