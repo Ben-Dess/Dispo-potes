@@ -14,6 +14,8 @@ execFileSync(process.execPath,['--check','sw.js'],{stdio:'inherit'});
 execFileSync(process.execPath,['--check','games.js'],{stdio:'inherit'});
 const games=readFileSync('games.js','utf8');
 for(const token of ['Shifumi Arena','Qui dans la bande ?','Dessine & Devine','openGames','drawCanvas','readyIds'])assert.ok(games.includes(token),'Missing mini-game feature: '+token);
+assert.ok(games.includes('for(const {x,y} of pts.slice(1))'),'Drawing points must use Firestore-compatible maps');
+assert.ok(!games.includes('for(const [x,y] of pts.slice(1))'),'Nested drawing point arrays are not Firestore compatible');
 
 
 for(const token of [
