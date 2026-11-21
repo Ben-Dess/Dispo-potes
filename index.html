@@ -236,36 +236,66 @@ header #logout,header .profile-link{flex-shrink:0}
 .guess-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd0eb}
 .guess-item span{overflow-wrap:anywhere}
 @media(max-width:680px){.game-grid{grid-template-columns:1fr}.game-tile{padding:16px}.game-entry{padding:14px}.game-entry strong{font-size:21px}.game-entry b{font-size:11px}.duel-row{gap:10px}.duel-player{min-width:100px;padding:9px}.duel-vs{font-size:22px}.game-top{flex-wrap:wrap}.game-top>a{margin-left:0}.game-hero{padding:18px}}
-</style></head>
+.profile-editor .avatar-options{gap:8px}.profile-editor .avatar-choice{flex:0 0 auto}.avatar-preview{background:linear-gradient(145deg,#fff1a0,#ffc9e9)}</style></head>
 <body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><a id="profileLink" href="#profile" class="profile-link hide" aria-label="Personnaliser mon avatar">Mon avatar</a><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
 <script type="module">
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}),monthText=(y,m)=>new Date(y,m,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}),iso=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
 let db,fs,auth,au,uid,installPrompt=null,unsubscribe=()=>{},calYear=0,calMonth=0,event=null,participants={},group=null,groupMembers={},activities=[],votes={},saving=false,profiles={},myProfile=null;
 
 const avatarPalettes={
- skin:['#f7d2b6','#dca781','#bd7c57','#8a523b','#fadfce'],
- hair:['#362a32','#775039','#c47f46','#e9bf75','#894b77','#f2eeee'],
- shirt:['#6a56e9','#ff6898','#2ab994','#ffbd45','#4895ec','#32264f']
+ skin:['#f7d2b6','#dca781','#bd7c57','#8a523b','#fadfce','#e9b995','#663e30'],
+ hair:['#362a32','#775039','#c47f46','#e9bf75','#894b77','#f2eeee','#151722','#7b2738','#dca655','#287c93'],
+ shirt:['#6a56e9','#ff6898','#2ab994','#ffbd45','#4895ec','#32264f','#f46a42','#f8f7f0']
 };
-const DEFAULT_AVATAR={skin:0,hair:0,shirt:0,style:0,eyes:0};
+const DEFAULT_AVATAR={skin:0,hair:0,shirt:0,style:0,eyes:0,accessory:0};
 function normalAvatar(v){
  const safe=(x,max)=>Number.isInteger(x)&&x>=0&&x<max?x:0;
- return {skin:safe(v?.skin,avatarPalettes.skin.length),hair:safe(v?.hair,avatarPalettes.hair.length),shirt:safe(v?.shirt,avatarPalettes.shirt.length),style:safe(v?.style,4),eyes:safe(v?.eyes,3)};
+ return {skin:safe(v?.skin,avatarPalettes.skin.length),hair:safe(v?.hair,avatarPalettes.hair.length),shirt:safe(v?.shirt,avatarPalettes.shirt.length),style:safe(v?.style,12),eyes:safe(v?.eyes,5),accessory:safe(v?.accessory,5)};
 }
 function avatarSVG(config,size=42){
  const a=normalAvatar(config),skin=avatarPalettes.skin[a.skin],hair=avatarPalettes.hair[a.hair],shirt=avatarPalettes.shirt[a.shirt];
- const locks=[
- '<path d="M12 31Q8 9 32 10Q54 9 52 31L46 21Q32 9 18 22Z" fill="'+hair+'"/>',
- '<path d="M11 30Q7 12 25 10L18 23L29 15L26 26L40 12Q53 16 52 30L46 20L39 27L33 20L24 29Z" fill="'+hair+'"/>',
- '<path d="M13 27Q12 13 31 13Q51 13 51 27Q47 14 40 22Q32 12 24 22Q16 16 13 27Z" fill="'+hair+'"/>',
- '<path d="M11 31Q8 9 32 9Q55 9 53 32L50 42L44 28Q32 15 20 28L15 42Z" fill="'+hair+'"/>'
- ][a.style];
+ // Each haircut includes a generously covered crown and an identifiable silhouette.
+ const hairShapes=[
+ // 0 Textured short fringe
+ '<path d="M11 31Q6 12 19 10Q30 1 46 10Q57 16 52 33L48 28L45 21L39 26L33 20L26 26L20 22L16 31Z" fill="'+hair+'"/>',
+ // 1 Big messy fringe
+ '<path d="M11 34L9 22L6 19L17 16L16 8L27 13L34 5L40 12L51 7L49 17L57 20L51 30L44 25L35 31L30 24L22 31L16 26Z" fill="'+hair+'"/>',
+ // 2 Curly afro
+ '<g fill="'+hair+'"><circle cx="15" cy="27" r="9"/><circle cx="13" cy="18" r="9"/><circle cx="21" cy="12" r="10"/><circle cx="31" cy="9" r="10"/><circle cx="42" cy="12" r="10"/><circle cx="50" cy="19" r="9"/><circle cx="50" cy="29" r="8"/><circle cx="24" cy="22" r="10"/><circle cx="39" cy="21" r="10"/></g>',
+ // 3 Long curtain layers with face framing
+ '<path d="M11 47Q6 35 10 20Q11 5 31 7Q51 5 54 22L54 49L47 54L47 28Q42 22 38 18Q35 29 29 31Q23 19 19 23L17 53Z" fill="'+hair+'"/>',
+ // 4 Side-swept thick hair
+ '<path d="M10 30Q5 10 22 9Q41 0 53 16L54 32L49 28L47 23Q31 23 22 31L17 27L14 35Z" fill="'+hair+'"/><path d="M14 23Q26 9 49 17Q39 27 20 29Z" fill="'+hair+'"/>',
+ // 5 High ponytail
+ '<path d="M14 33Q6 13 23 10Q41 4 50 16L51 32L46 23L38 21L32 26L21 20L17 34Z" fill="'+hair+'"/><path d="M46 13Q59 10 59 23Q62 39 55 49L48 46Q55 31 49 22Z" fill="'+hair+'"/>',
+ // 6 Big wavy hair
+ '<path d="M9 49Q4 39 10 27Q4 16 16 13Q20 3 34 8Q49 3 53 18Q60 27 53 40L56 53L46 55L47 33Q46 23 40 20Q32 28 25 23Q20 24 18 33L18 55Z" fill="'+hair+'"/>',
+ // 7 Spiky
+ '<path d="M10 34L7 21L12 23L15 7L23 14L29 3L35 14L45 4L46 17L56 14L51 31L44 25L37 26L31 20L23 28L17 27Z" fill="'+hair+'"/>',
+ // 8 Middle-part fringe
+ '<path d="M11 31Q8 8 28 9Q45 3 52 19L52 34L48 30L43 24Q37 27 33 32L30 22Q26 29 20 30L16 35Z" fill="'+hair+'"/>',
+ // 9 Braids
+ '<path d="M12 28Q9 7 31 9Q52 6 52 29L47 26Q40 20 32 20Q23 20 17 26Z" fill="'+hair+'"/><path d="M15 26L12 49L18 54L21 47L19 29M48 26L51 48L46 54L42 48L45 29" stroke="'+hair+'" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M13 34L20 39M12 43L19 48M44 36L51 41M43 45L49 49" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>',
+ // 10 Bun
+ '<circle cx="33" cy="8" r="10" fill="'+hair+'"/><path d="M11 31Q6 9 24 11Q47 4 53 26L49 33L46 23Q32 17 19 25L16 33Z" fill="'+hair+'"/>',
+ // 11 Bob
+ '<path d="M11 49Q8 39 9 25Q9 7 31 8Q53 7 54 28L53 50L44 52L45 31Q43 26 39 20Q31 28 23 23L19 31L20 52Z" fill="'+hair+'"/>'
+ ];
  const eyes=[
  '<circle cx="25" cy="34" r="2.1" fill="#251d2c"/><circle cx="39" cy="34" r="2.1" fill="#251d2c"/>',
  '<path d="M22 35q3 -4 6 0M36 35q3 -4 6 0" fill="none" stroke="#251d2c" stroke-width="2.1" stroke-linecap="round"/>',
- '<circle cx="25" cy="34" r="2" fill="#251d2c"/><path d="M36 35q3 -4 6 0" fill="none" stroke="#251d2c" stroke-width="2.1" stroke-linecap="round"/>'
+ '<circle cx="25" cy="34" r="2" fill="#251d2c"/><path d="M36 35q3 -4 6 0" fill="none" stroke="#251d2c" stroke-width="2.1" stroke-linecap="round"/>',
+ '<path d="M22 32l6 -2M36 30l6 2" fill="none" stroke="#251d2c" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="36" r="2" fill="#251d2c"/><circle cx="39" cy="36" r="2" fill="#251d2c"/>',
+ '<circle cx="25" cy="34" r="3" fill="#251d2c"/><circle cx="39" cy="34" r="3" fill="#251d2c"/><circle cx="26" cy="33" r="1" fill="white"/><circle cx="40" cy="33" r="1" fill="white"/>'
  ][a.eyes];
- return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Avatar 2D" width="'+size+'" height="'+size+'" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="#e7ddff" stroke="#24213e" stroke-width="2"/><path d="M4 64Q7 46 24 44H40Q57 46 60 64Z" fill="'+shirt+'"/><rect x="26" y="41" width="12" height="11" rx="4" fill="'+skin+'"/><ellipse cx="32" cy="30" rx="19" ry="22" fill="'+skin+'" stroke="#513c39" stroke-width="1.5"/>'+locks+eyes+'<path d="M28 43q4 4 8 0" fill="none" stroke="#8e4b50" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="40" r="3.4" fill="#fb8199" opacity=".35"/><circle cx="46" cy="40" r="3.4" fill="#fb8199" opacity=".35"/></svg>';
+ const accessory=[
+ '',
+ '<g stroke="#26213c" stroke-width="2.2" fill="none"><rect x="18" y="30" width="13" height="10" rx="4"/><rect x="33" y="30" width="13" height="10" rx="4"/><path d="M31 34h2M13 33h5M46 33h5"/></g>',
+ '<path d="M10 25Q13 10 32 10Q51 10 55 25L51 27Q30 20 13 29Z" fill="#6848ed" stroke="#26213c" stroke-width="1.8"/><path d="M13 27Q34 20 52 24L58 28Q41 33 13 31Z" fill="#ffda5f" stroke="#26213c" stroke-width="1.6"/>',
+ '<path d="M22 51Q32 58 43 51" fill="none" stroke="#6b3d2e" stroke-width="4" stroke-linecap="round"/><path d="M24 42Q32 45 40 42" stroke="#6b3d2e" stroke-width="3" fill="none" stroke-linecap="round"/>',
+ '<path d="M20 18l3 -4l4 4l-4 4Z" fill="#f9d952" stroke="#29213c" stroke-width="1.5"/><circle cx="19" cy="43" r="2.8" fill="#ffd66b" stroke="#29213c" stroke-width="1"/>'
+ ][a.accessory];
+ return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Avatar 2D" width="'+size+'" height="'+size+'" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="#e7ddff" stroke="#24213e" stroke-width="2"/><path d="M4 64Q7 46 24 44H40Q57 46 60 64Z" fill="'+shirt+'"/><rect x="26" y="41" width="12" height="11" rx="4" fill="'+skin+'"/><ellipse cx="32" cy="30" rx="19" ry="22" fill="'+skin+'" stroke="#513c39" stroke-width="1.5"/>'+hairShapes[a.style]+eyes+'<path d="M28 43q4 4 8 0" fill="none" stroke="#8e4b50" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="40" r="3.4" fill="#fb8199" opacity=".35"/><circle cx="46" cy="40" r="3.4" fill="#fb8199" opacity=".35"/>'+accessory+'</svg>';
 }
 async function loadProfiles(ids){
  const missing=[...new Set(ids.filter(Boolean))].filter(id=>!profiles[id]);
@@ -278,7 +308,7 @@ function avatarOf(id,size=42){return avatarSVG(profiles[id]||DEFAULT_AVATAR,size
 async function openProfile(){
  await loadProfiles([uid]);myProfile=normalAvatar(profiles[uid]);
  const choices=(key,labels)=>'<label>'+labels[0]+'</label><div class="avatar-options" data-field="'+key+'">'+labels[1].map((name,i)=>'<button class="avatar-choice'+(myProfile[key]===i?' selected':'')+'" data-value="'+i+'" type="button">'+esc(name)+'</button>').join('')+'</div>';
- html('<a class="subtle" href="#home">← Accueil</a><section class="panel profile-editor"><p class="eyebrow">UN PERSONNAGE À TON IMAGE</p><h1>Ton avatar 2D</h1><p>Personnalise ton petit personnage. Il sera visible dans tes groupes et dans les votes.</p><div id="avatarPreview" class="avatar-preview"></div>'+choices('skin',['Teint',['Clair','Doré','Bronzé','Foncé','Rosé']])+choices('hair',['Cheveux',['Noir','Châtain','Roux','Blond','Violet','Blanc']])+choices('style',['Coiffure',['Court','Ébouriffé','Bouclé','Long']])+choices('shirt',['Tenue',['Violet','Rose','Vert','Jaune','Bleu','Nuit']])+choices('eyes',['Expression',['Sourire','Content','Clin d’œil']])+'<button id="saveAvatar" class="btn" style="margin-top:20px">Enregistrer mon avatar</button></section>');
+ html('<a class="subtle" href="#home">← Accueil</a><section class="panel profile-editor"><p class="eyebrow">UN PERSONNAGE À TON IMAGE</p><h1>Ton avatar 2D</h1><p>Personnalise ton petit personnage. Il sera visible dans tes groupes et dans les votes.</p><div id="avatarPreview" class="avatar-preview"></div>'+choices('skin',['Teint',['Clair','Doré','Bronzé','Foncé','Rosé','Caramel','Ébène']])+choices('hair',['Couleur des cheveux',['Noir','Châtain','Roux','Blond','Violet','Blanc','Noir intense','Bordeaux','Miel','Bleu']])+choices('style',['Coiffure',['Frange','Décoiffé','Afro','Long','Sur le côté','Queue haute','Ondulé','Pics','Raie au milieu','Tresses','Chignon','Carré']])+choices('shirt',['Tenue',['Violet','Rose','Vert','Jaune','Bleu','Nuit','Corail','Blanc']])+choices('eyes',['Expression',['Classique','Yeux souriants','Clin d’œil','Déterminé','Grands yeux']])+choices('accessory',['Accessoire',['Aucun','Lunettes','Casquette','Barbe','Bijou']])+'<button id="saveAvatar" class="btn" style="margin-top:20px">Enregistrer mon avatar</button></section>');
  function preview(){ $('avatarPreview').innerHTML=avatarSVG(myProfile,136)}
  preview();
  document.querySelectorAll('.avatar-options').forEach(group=>group.querySelectorAll('button').forEach(b=>b.onclick=()=>{
