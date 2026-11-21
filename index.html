@@ -136,14 +136,65 @@ a.item:hover{background:#eee5ff}
 @media(max-width:680px){header{padding-top:15px}.brand{font-size:27px}.panel{padding:18px;border-radius:19px;box-shadow:4px 5px 0 var(--ink)}.panel:hover{box-shadow:4px 5px 0 var(--ink)}.hero-wrap{padding:24px 19px;box-shadow:4px 5px 0 var(--ink)}.hero-wrap h1{font-size:clamp(36px,9vw,48px)}.hero-wrap p:not(.eyebrow){font-size:14px}.event-card{padding:12px;gap:9px}.event-card-emoji{width:45px;height:45px;font-size:23px}.event-card-action{font-size:11px;padding:7px}.event-card-body strong{font-size:16px}.btn{border-radius:13px}h2{font-size:23px}.day{min-height:32px;border-radius:9px}}
 @media(prefers-reduced-motion:reduce){.doodle{animation:none}.btn,.event-card,.panel{transition:none}}
 </style></head>
-<body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
+<body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><a id="profileLink" href="#profile" class="profile-link hide" aria-label="Personnaliser mon avatar">Mon avatar</a><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
 <script type="module">
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}),monthText=(y,m)=>new Date(y,m,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}),iso=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-let db,fs,auth,au,uid,installPrompt=null,unsubscribe=()=>{},calYear=0,calMonth=0,event=null,participants={},group=null,groupMembers={},activities=[],votes={},saving=false;
+let db,fs,auth,au,uid,installPrompt=null,unsubscribe=()=>{},calYear=0,calMonth=0,event=null,participants={},group=null,groupMembers={},activities=[],votes={},saving=false,profiles={},myProfile=null;
+
+const avatarPalettes={
+ skin:['#f7d2b6','#dca781','#bd7c57','#8a523b','#fadfce'],
+ hair:['#362a32','#775039','#c47f46','#e9bf75','#894b77','#f2eeee'],
+ shirt:['#6a56e9','#ff6898','#2ab994','#ffbd45','#4895ec','#32264f']
+};
+const DEFAULT_AVATAR={skin:0,hair:0,shirt:0,style:0,eyes:0};
+function normalAvatar(v){
+ const safe=(x,max)=>Number.isInteger(x)&&x>=0&&x<max?x:0;
+ return {skin:safe(v?.skin,avatarPalettes.skin.length),hair:safe(v?.hair,avatarPalettes.hair.length),shirt:safe(v?.shirt,avatarPalettes.shirt.length),style:safe(v?.style,4),eyes:safe(v?.eyes,3)};
+}
+function avatarSVG(config,size=42){
+ const a=normalAvatar(config),skin=avatarPalettes.skin[a.skin],hair=avatarPalettes.hair[a.hair],shirt=avatarPalettes.shirt[a.shirt];
+ const locks=[
+ '<path d="M12 31Q8 9 32 10Q54 9 52 31L46 21Q32 9 18 22Z" fill="'+hair+'"/>',
+ '<path d="M11 30Q7 12 25 10L18 23L29 15L26 26L40 12Q53 16 52 30L46 20L39 27L33 20L24 29Z" fill="'+hair+'"/>',
+ '<path d="M13 27Q12 13 31 13Q51 13 51 27Q47 14 40 22Q32 12 24 22Q16 16 13 27Z" fill="'+hair+'"/>',
+ '<path d="M11 31Q8 9 32 9Q55 9 53 32L50 42L44 28Q32 15 20 28L15 42Z" fill="'+hair+'"/>'
+ ][a.style];
+ const eyes=[
+ '<circle cx="25" cy="34" r="2.1" fill="#251d2c"/><circle cx="39" cy="34" r="2.1" fill="#251d2c"/>',
+ '<path d="M22 35q3 -4 6 0M36 35q3 -4 6 0" fill="none" stroke="#251d2c" stroke-width="2.1" stroke-linecap="round"/>',
+ '<circle cx="25" cy="34" r="2" fill="#251d2c"/><path d="M36 35q3 -4 6 0" fill="none" stroke="#251d2c" stroke-width="2.1" stroke-linecap="round"/>'
+ ][a.eyes];
+ return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Avatar 2D" width="'+size+'" height="'+size+'" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="#e7ddff" stroke="#24213e" stroke-width="2"/><path d="M4 64Q7 46 24 44H40Q57 46 60 64Z" fill="'+shirt+'"/><rect x="26" y="41" width="12" height="11" rx="4" fill="'+skin+'"/><ellipse cx="32" cy="30" rx="19" ry="22" fill="'+skin+'" stroke="#513c39" stroke-width="1.5"/>'+locks+eyes+'<path d="M28 43q4 4 8 0" fill="none" stroke="#8e4b50" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="40" r="3.4" fill="#fb8199" opacity=".35"/><circle cx="46" cy="40" r="3.4" fill="#fb8199" opacity=".35"/></svg>';
+}
+async function loadProfiles(ids){
+ const missing=[...new Set(ids.filter(Boolean))].filter(id=>!profiles[id]);
+ await Promise.all(missing.map(async id=>{
+   try{const p=await get('profiles/'+id);profiles[id]=p?.avatar||DEFAULT_AVATAR}
+   catch(e){console.warn('Avatar indisponible',e);profiles[id]=DEFAULT_AVATAR}
+ }));
+}
+function avatarOf(id,size=42){return avatarSVG(profiles[id]||DEFAULT_AVATAR,size)}
+async function openProfile(){
+ await loadProfiles([uid]);myProfile=normalAvatar(profiles[uid]);
+ const choices=(key,labels)=>'<label>'+labels[0]+'</label><div class="avatar-options" data-field="'+key+'">'+labels[1].map((name,i)=>'<button class="avatar-choice'+(myProfile[key]===i?' selected':'')+'" data-value="'+i+'" type="button">'+esc(name)+'</button>').join('')+'</div>';
+ html('<a class="subtle" href="#home">← Accueil</a><section class="panel profile-editor"><p class="eyebrow">UN PERSONNAGE À TON IMAGE</p><h1>Ton avatar 2D</h1><p>Personnalise ton petit personnage. Il sera visible dans tes groupes et dans les votes.</p><div id="avatarPreview" class="avatar-preview"></div>'+choices('skin',['Teint',['Clair','Doré','Bronzé','Foncé','Rosé']])+choices('hair',['Cheveux',['Noir','Châtain','Roux','Blond','Violet','Blanc']])+choices('style',['Coiffure',['Court','Ébouriffé','Bouclé','Long']])+choices('shirt',['Tenue',['Violet','Rose','Vert','Jaune','Bleu','Nuit']])+choices('eyes',['Expression',['Sourire','Content','Clin d’œil']])+'<button id="saveAvatar" class="btn" style="margin-top:20px">Enregistrer mon avatar</button></section>');
+ function preview(){ $('avatarPreview').innerHTML=avatarSVG(myProfile,136)}
+ preview();
+ document.querySelectorAll('.avatar-options').forEach(group=>group.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+   myProfile[group.dataset.field]=Number(b.dataset.value);
+   group.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));preview();
+ }));
+ $('saveAvatar').onclick=async()=>{
+   const btn=$('saveAvatar');btn.disabled=true;
+   try{await put('profiles/'+uid,{avatar:normalAvatar(myProfile),updatedAt:fs.serverTimestamp()});profiles[uid]=normalAvatar(myProfile);status('Ton avatar est enregistré !');btn.textContent='Avatar enregistré ✓'}
+   catch(e){status('Enregistrement impossible : '+e.message,true);btn.disabled=false}
+ };
+}
+
 function status(msg,err=false){$('status').textContent=msg;$('status').className='status '+(err?'error':'')}
 function html(t){unsubscribe();unsubscribe=()=>{};$('view').innerHTML=t}
 function days(a,b){const out=[],d=new Date(a+'T12:00:00'),end=new Date(b+'T12:00:00');for(let i=0;d<=end&&i<366;i++,d.setDate(d.getDate()+1))out.push(iso(d.getFullYear(),d.getMonth(),d.getDate()));return out}
-async function init(){try{const cfg=await(await fetch('./firebase-config.json')).json();const [app,a,f]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')]);au=a;fs=f;auth=a.getAuth(app.initializeApp(cfg));db=f.getFirestore();await auth.authStateReady();if(auth.currentUser){uid=auth.currentUser.uid;$('account').textContent=auth.currentUser.displayName||auth.currentUser.email;$('logout').classList.remove('hide')}route()}catch(e){console.error(e);html('<div class="panel"><h2>Impossible de démarrer</h2><p>'+esc(e.message)+'</p></div>')}}
+async function init(){try{const cfg=await(await fetch('./firebase-config.json')).json();const [app,a,f]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')]);au=a;fs=f;auth=a.getAuth(app.initializeApp(cfg));db=f.getFirestore();await auth.authStateReady();if(auth.currentUser){uid=auth.currentUser.uid;$('account').textContent=auth.currentUser.displayName||auth.currentUser.email;$('logout').classList.remove('hide');$('profileLink').classList.remove('hide')}route()}catch(e){console.error(e);html('<div class="panel"><h2>Impossible de démarrer</h2><p>'+esc(e.message)+'</p></div>')}}
 async function signin(){
  const provider=new au.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
  try{
@@ -163,7 +214,7 @@ $('logout').onclick=async()=>{await au.signOut(auth);location.hash='home';locati
 async function get(path){const d=await fs.getDoc(fs.doc(db,path));return d.exists()?{id:d.id,...d.data()}:null}
 async function put(path,obj){return fs.setDoc(fs.doc(db,path),obj)}
 async function list(path){const s=await fs.getDocs(fs.collection(db,path));return s.docs.map(d=>({id:d.id,...d.data()}))}
-async function route(){if(!auth?.currentUser){html('<div class="panel"><p class="eyebrow">Bienvenue sur DispoPotes</p><h1>On se voit quand ?</h1><p>Connecte-toi avec Google pour organiser des sorties avec tes potes.</p><button class="btn" id="login">Continuer avec Google</button></div>');$('login').onclick=signin;return}const [type,id]=decodeURIComponent(location.hash.slice(1)||'home').split('/');try{status('');if(type==='group'&&id)await showGroup(id);else if(type==='join'&&id)await showGroup(id,decodeURIComponent(location.hash.slice(1).split('/')[2]||''));else if(type==='event'&&id)await showEvent(id);else await showHome()}catch(e){console.error(e);html('<div class="panel"><h2>Une erreur est survenue</h2><p>'+esc(e.message)+'</p><a href="#home">Retour à l’accueil</a></div>');status(e.message,true)}}
+async function route(){if(!auth?.currentUser){html('<div class="panel"><p class="eyebrow">Bienvenue sur DispoPotes</p><h1>On se voit quand ?</h1><p>Connecte-toi avec Google pour organiser des sorties avec tes potes.</p><button class="btn" id="login">Continuer avec Google</button></div>');$('login').onclick=signin;return}const [type,id]=decodeURIComponent(location.hash.slice(1)||'home').split('/');try{status('');if(type==='profile')await openProfile();else if(type==='group'&&id)await showGroup(id);else if(type==='join'&&id)await showGroup(id,decodeURIComponent(location.hash.slice(1).split('/')[2]||''));else if(type==='event'&&id)await showEvent(id);else await showHome()}catch(e){console.error(e);html('<div class="panel"><h2>Une erreur est survenue</h2><p>'+esc(e.message)+'</p><a href="#home">Retour à l’accueil</a></div>');status(e.message,true)}}
 window.addEventListener('hashchange',route);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.classList.remove('hide')});
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else status('Sur iPhone : ouvre le menu Partager de Safari puis « Sur l’écran d’accueil ». Sur Android : menu du navigateur → « Installer l’application ».')}
