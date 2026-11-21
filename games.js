@@ -214,20 +214,21 @@ export function openGames(ctx){
    c.fillStyle='#fffdf6';c.fillRect(0,0,700,440);
    c.strokeStyle='#2d2446';c.lineWidth=5;c.lineCap='round';c.lineJoin='round';
    for(const stroke of data){const pts=stroke.points||[];if(!pts.length)continue;
-     c.beginPath();c.moveTo(pts[0][0]/1000*700,pts[0][1]/1000*440);
-     for(const [x,y] of pts.slice(1))c.lineTo(x/1000*700,y/1000*440);
-     if(pts.length===1)c.lineTo(pts[0][0]/1000*700+.1,pts[0][1]/1000*440+.1);
+     // Firestore does not support nested arrays: each point is a map {x,y}.
+     c.beginPath();c.moveTo(pts[0].x/1000*700,pts[0].y/1000*440);
+     for(const {x,y} of pts.slice(1))c.lineTo(x/1000*700,y/1000*440);
+     if(pts.length===1)c.lineTo(pts[0].x/1000*700+.1,pts[0].y/1000*440+.1);
      c.stroke();
    }
  }
  function attachDrawer(canvas,game){
    canvas.style.touchAction='none';let drawing=false,points=[];
-   const point=e=>{const r=canvas.getBoundingClientRect();return [
-     Math.max(0,Math.min(1000,Math.round((e.clientX-r.left)/r.width*1000))),
-     Math.max(0,Math.min(1000,Math.round((e.clientY-r.top)/r.height*1000)))
-   ]};
+   const point=e=>{const r=canvas.getBoundingClientRect();return {
+     x:Math.max(0,Math.min(1000,Math.round((e.clientX-r.left)/r.width*1000))),
+     y:Math.max(0,Math.min(1000,Math.round((e.clientY-r.top)/r.height*1000)))
+   }};
    canvas.onpointerdown=e=>{if(currentGame?.revealed)return;drawing=true;points=[point(e)];canvas.setPointerCapture(e.pointerId)};
-   canvas.onpointermove=e=>{if(!drawing)return;const p=point(e),prev=points[points.length-1];if(Math.abs(p[0]-prev[0])+Math.abs(p[1]-prev[1])<3)return;if(points.length<100)points.push(p);paint(canvas,[...strokes,{points}])};
+   canvas.onpointermove=e=>{if(!drawing)return;const p=point(e),prev=points[points.length-1];if(Math.abs(p.x-prev.x)+Math.abs(p.y-prev.y)<3)return;if(points.length<100)points.push(p);paint(canvas,[...strokes,{points}])};
    canvas.onpointerup=async()=>{
      if(!drawing)return;drawing=false;const out=points;points=[];
      if(!out.length)return;
