@@ -185,6 +185,57 @@ header #logout,header .profile-link{flex-shrink:0}
  header>.row{justify-content:space-between}
  header #logout,header .profile-link{font-size:11px;padding:7px 10px}
 }
+
+/* Group mini-games, matching Pop & Social */
+.game-entry{display:flex;align-items:center;gap:12px;background:#bbf1dc;border:2px solid #292142;border-radius:22px;box-shadow:5px 6px 0 #292142;padding:20px;margin:0 5px 22px 0;color:#26203f;text-decoration:none}
+.game-entry strong,.game-tile strong{font:700 24px Fredoka,sans-serif;display:block}
+.game-entry small,.game-session small{font-size:12px;display:block;color:#59526d;margin-top:3px}
+.game-entry b,.game-session b{margin-left:auto;white-space:nowrap;font-size:12px}
+.game-entry-symbol{width:54px;height:54px;display:grid;place-items:center;font:700 24px Fredoka,sans-serif;background:#ffda5f;border:2px solid #292142;border-radius:16px;transform:rotate(-9deg)}
+.game-hero{margin:18px 0 24px;border:2px solid #292142;border-radius:25px;background:#fbd3ed;box-shadow:5px 6px 0 #292142;padding:25px}
+.game-hero h1{font-size:clamp(36px,5vw,55px);margin-bottom:6px}
+.game-hero p{margin:0}
+.game-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:25px 0 28px}
+.game-tile{min-width:0;cursor:pointer;display:flex;align-items:flex-start;flex-direction:column;text-align:left;gap:12px;padding:23px 18px;border:2px solid #292142;border-radius:23px;box-shadow:4px 5px 0 #292142;background:#e7dcff;color:#272143;font-family:inherit}
+.game-tile:nth-child(2){background:#ffedac}.game-tile:nth-child(3){background:#bdf2e0}
+.game-tile:hover{transform:translate(2px,2px);box-shadow:2px 3px 0 #292142}
+.game-tile small{font-size:13px;line-height:1.5;color:#4a4360}
+.game-tile b{font-size:12px;margin-top:auto}
+.game-icon{display:grid;place-items:center;background:#fff;border:2px solid #292142;border-radius:15px;width:58px;height:58px;font:700 28px Fredoka,sans-serif}
+.game-session{display:flex;align-items:center;gap:12px;text-decoration:none;color:#292142;border-bottom:1px dashed #d8cee7;padding:12px 3px}
+.game-session:last-child{border:0}
+.game-session strong{font-weight:800}
+.game-session-avatar{display:flex}
+.game-top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.game-top>a{margin-left:auto}
+.duel-row,.duel-result{display:flex;align-items:center;justify-content:center;gap:25px;flex-wrap:wrap;margin:16px 0 26px}
+.duel-player{min-width:130px;min-height:155px;display:flex;flex-direction:column;align-items:center;gap:7px;background:#ffeff7;border:2px solid #292142;border-radius:20px;padding:15px}
+.duel-player strong{font:600 18px Fredoka,sans-serif}
+.duel-player small{font-size:12px}
+.duel-vs{font:700 33px Fredoka,sans-serif;color:#7a4ee7}
+.ghost-player{background:#f4f1fb;justify-content:center;border-style:dashed}
+.move-grid,.quiz-options{display:flex;gap:12px;flex-wrap:wrap;margin:15px 0 22px}
+.move-btn,.quiz-person{cursor:pointer;border:2px solid #292142;border-radius:16px;box-shadow:3px 4px 0 #292142;padding:15px;background:#ffecaa;color:#292142;font-weight:800}
+.move-btn:hover,.quiz-person:hover{transform:translate(1px,2px);box-shadow:2px 2px 0 #292142}
+.move-btn:disabled,.quiz-person:disabled{opacity:.7;cursor:default}
+.duel-result>div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.duel-result strong{font-weight:800}.duel-result span{font:600 22px Fredoka,sans-serif}
+.game-notice{background:#d8f5e6;border:2px solid #292142;border-radius:13px;padding:15px;font-weight:700;color:#302c46}
+.quiz-prompt{font-size:clamp(21px,3vw,30px);margin:10px 0 15px}
+.quiz-person{display:flex;align-items:center;gap:10px;background:#f1eaff}
+.quiz-person.picked{background:#aceccc}
+.quiz-result{display:flex;gap:10px;align-items:center;padding:10px 0}
+.quiz-result strong{min-width:86px}
+.quiz-bar{flex:1;background:#f4eaff;border:2px solid #292142;border-radius:20px;height:15px;overflow:hidden}
+.quiz-bar i{display:block;height:100%;background:#ff70aa;transition:width .4s}
+.drawing-wrap{max-width:700px;width:100%;background:#fffdf6;border:3px solid #292142;border-radius:15px;overflow:hidden;margin:20px auto}
+.drawing-wrap canvas{display:block;width:100%;height:auto;aspect-ratio:700/440;touch-action:auto}
+.draw-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}
+.draw-tools label{margin:0 15px 0 0}
+.guess-form{margin:20px 0}
+.guess-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #ddd0eb}
+.guess-item span{overflow-wrap:anywhere}
+@media(max-width:680px){.game-grid{grid-template-columns:1fr}.game-tile{padding:16px}.game-entry{padding:14px}.game-entry strong{font-size:21px}.game-entry b{font-size:11px}.duel-row{gap:10px}.duel-player{min-width:100px;padding:9px}.duel-vs{font-size:22px}.game-top{flex-wrap:wrap}.game-top>a{margin-left:0}.game-hero{padding:18px}}
 </style></head>
 <body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><a id="profileLink" href="#profile" class="profile-link hide" aria-label="Personnaliser mon avatar">Mon avatar</a><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
 <script type="module">
@@ -264,7 +315,7 @@ $('logout').onclick=async()=>{await au.signOut(auth);location.hash='home';locati
 async function get(path){const d=await fs.getDoc(fs.doc(db,path));return d.exists()?{id:d.id,...d.data()}:null}
 async function put(path,obj){return fs.setDoc(fs.doc(db,path),obj)}
 async function list(path){const s=await fs.getDocs(fs.collection(db,path));return s.docs.map(d=>({id:d.id,...d.data()}))}
-async function route(){if(!auth?.currentUser){html('<div class="panel"><p class="eyebrow">Bienvenue sur DispoPotes</p><h1>On se voit quand ?</h1><p>Connecte-toi avec Google pour organiser des sorties avec tes potes.</p><button class="btn" id="login">Continuer avec Google</button></div>');$('login').onclick=signin;return}const [type,id]=decodeURIComponent(location.hash.slice(1)||'home').split('/');try{status('');if(type==='profile')await openProfile();else if(type==='group'&&id)await showGroup(id);else if(type==='join'&&id)await showGroup(id,decodeURIComponent(location.hash.slice(1).split('/')[2]||''));else if(type==='event'&&id)await showEvent(id);else await showHome()}catch(e){console.error(e);html('<div class="panel"><h2>Une erreur est survenue</h2><p>'+esc(e.message)+'</p><a href="#home">Retour à l’accueil</a></div>');status(e.message,true)}}
+async function route(){if(!auth?.currentUser){html('<div class="panel"><p class="eyebrow">Bienvenue sur DispoPotes</p><h1>On se voit quand ?</h1><p>Connecte-toi avec Google pour organiser des sorties avec tes potes.</p><button class="btn" id="login">Continuer avec Google</button></div>');$('login').onclick=signin;return}const [type,id]=decodeURIComponent(location.hash.slice(1)||'home').split('/');try{status('');if(type==='profile')await openProfile();else if(type==='games'&&id)await showGames(id);else if(type==='group'&&id)await showGroup(id);else if(type==='join'&&id)await showGroup(id,decodeURIComponent(location.hash.slice(1).split('/')[2]||''));else if(type==='event'&&id)await showEvent(id);else await showHome()}catch(e){console.error(e);html('<div class="panel"><h2>Une erreur est survenue</h2><p>'+esc(e.message)+'</p><a href="#home">Retour à l’accueil</a></div>');status(e.message,true)}}
 window.addEventListener('hashchange',route);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.classList.remove('hide')});
 async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else status('Sur iPhone : ouvre le menu Partager de Safari puis « Sur l’écran d’accueil ». Sur Android : menu du navigateur → « Installer l’application ».')}
@@ -274,6 +325,17 @@ async function showHome(){html('<div class="row wrap hero-wrap" style="margin-bo
 $('installApp').onclick=installApp;showLegacyList();if(installPrompt)$('installApp').classList.remove('hide');
 $('newGroup').onsubmit=async e=>{e.preventDefault();const name=$('groupName').value.trim();if(!name)return;const b=e.submitter;b.disabled=true;try{const ref=fs.doc(fs.collection(db,'groups'));await put('groups/'+ref.id,{name,ownerId:uid,createdAt:fs.serverTimestamp()});await put('groups/'+ref.id+'/members/'+uid,{name:auth.currentUser.displayName||auth.currentUser.email||'Membre',role:'owner',joinedAt:fs.serverTimestamp()});await saveMyGroup(ref.id);location.hash='group/'+ref.id}catch(err){status(err.message,true);b.disabled=false}};
 try{const refs=await list('users/'+uid+'/groups');const groups=await Promise.all(refs.map(async r=>{try{return await get('groups/'+r.id)}catch{return null}}));$('groups').innerHTML=groups.filter(Boolean).map(g=>'<a class="item" href="#group/'+encodeURIComponent(g.id)+'"><span><strong>'+esc(g.name)+'</strong><small>Voir les sorties et les membres</small></span>→</a>').join('')||'<p>Aucun groupe pour le moment.</p>'}catch(e){$('groups').textContent='Impossible de charger les groupes : '+e.message}}
+async function showGames(id){
+ const g=await get('groups/'+id);
+ if(!g)throw Error('Groupe introuvable');
+ const my=await get('groups/'+id+'/members/'+uid);
+ if(!my)throw Error('Rejoins ce groupe avant de jouer.');
+ const docs=await list('groups/'+id+'/members');
+ const members=Object.fromEntries(docs.map(m=>[m.id,m]));
+ await loadProfiles(docs.map(m=>m.id));
+ const module=await import('./games.js');
+ module.openGames({fs,db,uid,groupId:id,members,avatarOf,html,status,setCleanup:fn=>{unsubscribe=fn}});
+}
 async function showLegacyList(){
 const box=$('legacyEvents');if(!box)return;
 try{
@@ -286,7 +348,7 @@ try{
 async function showGroup(id,redirectEvent=''){group=await get('groups/'+id);if(!group)throw Error('Groupe introuvable');groupMembers={};const myMembership=await get('groups/'+id+'/members/'+uid);const isMember=!!myMembership;if(!isMember){html('<a href="#home">← Accueil</a><div class="panel" style="margin-top:20px"><p class="eyebrow">Invitation à un groupe</p><h1>'+esc(group.name)+'</h1><p>Rejoins le groupe pour voir les sorties et indiquer tes disponibilités.</p><button id="joinGroup" class="btn">Rejoindre</button></div>');$('joinGroup').onclick=async()=>{try{await put('groups/'+id+'/members/'+uid,{name:auth.currentUser.displayName||auth.currentUser.email||'Membre',role:'member',joinedAt:fs.serverTimestamp()});await saveMyGroup(id);if(redirectEvent)location.hash='event/'+encodeURIComponent(redirectEvent);else await showGroup(id)}catch(e){status(e.message,true)}};return}
 if(redirectEvent){location.hash='event/'+encodeURIComponent(redirectEvent);return}
 const docs=await list('groups/'+id+'/members');docs.forEach(x=>groupMembers[x.id]=x);await loadProfiles(docs.map(m=>m.id));
-html('<a href="#home" class="subtle">← Mes groupes</a><div class="row wrap" style="margin:18px 0 22px"><div><p class="eyebrow">👋 LA TEAM EST RÉUNIE</p><h1>'+esc(group.name)+'</h1><p class="subtle">'+docs.length+' pote(s) dans le groupe</p></div><button class="btn secondary" id="shareGroup">Copier l’invitation</button></div><div class="cols"><section class="panel"><h2>🔥 Ça arrive bientôt !</h2><div id="groupEvents">Chargement…</div><div style="border-top:1px solid #eee;margin:20px 0"></div><h2>📸 Les souvenirs</h2><div id="pastEvents">Chargement…</div></section><section class="stack"><div class="panel"><h2>🚀 On organise quoi ?</h2><form id="newEvent"><label>Nom de la sortie<input id="eventTitle" maxlength="90" required placeholder="Soirée entre potes"></label><div class="field-row"><div><label>Du</label><input id="start" type="date" required></div><div><label>Au</label><input id="end" type="date" required></div></div><button class="btn" style="margin-top:16px">Créer</button></form></div><div class="panel"><h2>Membres</h2>'+docs.map(m=>'<div class="member-card">'+avatarOf(m.id,46)+'<span>'+esc(m.name)+'</span>'+(m.role==='owner'?' <span class="pill">Créateur</span>':'')+'</div>').join('')+'</div></section></div>');
+html('<a href="#home" class="subtle">← Mes groupes</a><div class="row wrap" style="margin:18px 0 22px"><div><p class="eyebrow">👋 LA TEAM EST RÉUNIE</p><h1>'+esc(group.name)+'</h1><p class="subtle">'+docs.length+' pote(s) dans le groupe</p></div><button class="btn secondary" id="shareGroup">Copier l’invitation</button></div><div class="cols"><section class="panel"><h2>🔥 Ça arrive bientôt !</h2><div id="groupEvents">Chargement…</div><div style="border-top:1px solid #eee;margin:20px 0"></div><h2>📸 Les souvenirs</h2><div id="pastEvents">Chargement…</div></section><section class="stack"><div class="panel"><h2>🚀 On organise quoi ?</h2><form id="newEvent"><label>Nom de la sortie<input id="eventTitle" maxlength="90" required placeholder="Soirée entre potes"></label><div class="field-row"><div><label>Du</label><input id="start" type="date" required></div><div><label>Au</label><input id="end" type="date" required></div></div><button class="btn" style="margin-top:16px">Créer</button></form></div><a class="game-entry" href="#games/'+encodeURIComponent(id)+'"><span class="game-entry-symbol">VS</span><span><strong>La Récré</strong><small>Shifumi, Quiz et Dessine & Devine</small></span><b>Jouer ↗</b></a><div class="panel"><h2>Membres</h2>'+docs.map(m=>'<div class="member-card">'+avatarOf(m.id,46)+'<span>'+esc(m.name)+'</span>'+(m.role==='owner'?' <span class="pill">Créateur</span>':'')+'</div>').join('')+'</div></section></div>');
 $('shareGroup').onclick=()=>copyLink('#group/'+id);const today=new Date();$('start').value=iso(today.getFullYear(),today.getMonth(),today.getDate());const later=new Date(today);later.setDate(later.getDate()+30);$('end').value=iso(later.getFullYear(),later.getMonth(),later.getDate());
 $('newEvent').onsubmit=async e=>{e.preventDefault();const title=$('eventTitle').value.trim(),startDate=$('start').value,endDate=$('end').value;if(!title||endDate<startDate||days(startDate,endDate).length>365){status('Période invalide (maximum 365 jours).',true);return}e.submitter.disabled=true;try{const ref=fs.doc(fs.collection(db,'events'));const previous=$('eventTitle').dataset.duplicate?await get('events/'+$('eventTitle').dataset.duplicate):null;await put('events/'+ref.id,{title,groupId:id,createdBy:uid,startDate,endDate,status:'planning',description:(previous?.description||''),location:(previous?.location||''),startTime:(previous?.startTime||''),budget:(previous?.budget||''),confirmedDate:null,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()});location.hash='event/'+ref.id}catch(err){status(err.message,true);e.submitter.disabled=false}};
 try{
