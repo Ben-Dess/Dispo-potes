@@ -18,7 +18,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p dist
-          cp index.html firebase-config.json manifest.webmanifest icon.svg sw.js dist/
+          cp index.html firebase-config.json manifest.webmanifest icon.svg icon-192.png icon-512.png sw.js dist/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
