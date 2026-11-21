@@ -81,7 +81,7 @@ $('eventTitle').dataset.duplicate=old.id;
 $('eventTitle').focus();
 status('Ancienne sortie reprise : vérifie les nouvelles dates et clique sur Créer.');
 });
-}catch(e){$('groupEvents').textContent='Erreur lors du chargement : '+e.message;$('pastEvents').textContent='Historique indisponible.'}
+}catch(e){$('groupEvents').textContent='Erreur lors du chargement : '+e.message;$('pastEvents').textContent='Historique indisponible.'}}
 async function copyLink(hash){const url=new URL(location.href);url.hash=hash;try{await navigator.clipboard.writeText(url.toString());status('Lien copié.')}catch{prompt('Copie ce lien :',url.toString())}}
 function availOf(p,date){if(p.availability&&p.availability[date])return p.availability[date];if(p.dates?.includes(date))return 'available';return null}
 async function showEvent(id){event=await get('events/'+id);if(!event)throw Error('Sortie introuvable');if(!event.groupId){html('<div class="panel"><h2>Ancienne sortie V1</h2><p>Cette sortie a été créée avant les groupes. Elle reste dans la V1. Les nouvelles sorties V2 appartiennent obligatoirement à un groupe.</p><a href="#home">Retour</a></div>');return}
