@@ -38,4 +38,4 @@ jobs:
       - name: Allow artifact indexing to settle
         run: sleep 20
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
