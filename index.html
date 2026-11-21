@@ -376,7 +376,7 @@ async function openProfile(){
  preview();
  document.querySelectorAll('.avatar-options').forEach(group=>group.querySelectorAll('button').forEach(b=>b.onclick=()=>{
    myProfile[group.dataset.field]=Number(b.dataset.value);
-   group.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));preview();
+   group.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));preview();const save=$('saveAvatar');if(save){save.disabled=false;save.textContent='Enregistrer mon avatar'}
  }));
  $('saveAvatar').onclick=async()=>{
    const btn=$('saveAvatar');btn.disabled=true;
