@@ -22,7 +22,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['avatar','updatedAt'])
         && request.resource.data.avatar is map
         && request.resource.data.avatar.keys().hasAll(['skin','hair','shirt','style','eyes'])
-        && request.resource.data.avatar.keys().hasOnly(['skin','hair','shirt','style','eyes','accessory'])
+        && request.resource.data.avatar.keys().hasOnly(['skin','hair','shirt','style','eyes','accessory','face','brows','nose','mouth','outfit','motion'])
         && request.resource.data.avatar.skin is int
         && request.resource.data.avatar.skin >= 0
         && request.resource.data.avatar.skin < 7
@@ -41,7 +41,31 @@ service cloud.firestore {
         && (!('accessory' in request.resource.data.avatar)
             || (request.resource.data.avatar.accessory is int
                 && request.resource.data.avatar.accessory >= 0
-                && request.resource.data.avatar.accessory < 5));
+                && request.resource.data.avatar.accessory < 10))
+        && (!('face' in request.resource.data.avatar)
+            || (request.resource.data.avatar.face is int
+                && request.resource.data.avatar.face >= 0
+                && request.resource.data.avatar.face < 4))
+        && (!('brows' in request.resource.data.avatar)
+            || (request.resource.data.avatar.brows is int
+                && request.resource.data.avatar.brows >= 0
+                && request.resource.data.avatar.brows < 5))
+        && (!('nose' in request.resource.data.avatar)
+            || (request.resource.data.avatar.nose is int
+                && request.resource.data.avatar.nose >= 0
+                && request.resource.data.avatar.nose < 4))
+        && (!('mouth' in request.resource.data.avatar)
+            || (request.resource.data.avatar.mouth is int
+                && request.resource.data.avatar.mouth >= 0
+                && request.resource.data.avatar.mouth < 6))
+        && (!('outfit' in request.resource.data.avatar)
+            || (request.resource.data.avatar.outfit is int
+                && request.resource.data.avatar.outfit >= 0
+                && request.resource.data.avatar.outfit < 6))
+        && (!('motion' in request.resource.data.avatar)
+            || (request.resource.data.avatar.motion is int
+                && request.resource.data.avatar.motion >= 0
+                && request.resource.data.avatar.motion < 4));
     }
         match /users/{userId}/groups/{groupId} {
       allow read, delete: if signedIn() && userId == request.auth.uid;
