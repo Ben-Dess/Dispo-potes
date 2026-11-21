@@ -246,6 +246,17 @@ header #logout,header .profile-link{flex-shrink:0}
 @keyframes avatar-wave{0%,65%,100%{transform:rotate(0)}76%{transform:rotate(-9deg)}87%{transform:rotate(8deg)}}
 @keyframes avatar-celebrate{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-7%) rotate(-6deg)}55%{transform:translateY(-3%) rotate(7deg)}75%{transform:translateY(-7%) rotate(-5deg)}}
 @media(prefers-reduced-motion:reduce){.avatar-svg{animation:none!important}}
+
+/* Group photo: responsive collage, downloadable as a PNG. */
+.group-photo-panel{background:#fffdf5}
+.group-photo{border:3px solid #28213f;border-radius:20px;overflow:hidden;background:radial-gradient(circle at 95% 5%,#ffc8e8 0 12%,transparent 13%),radial-gradient(circle at 5% 90%,#c6f8d9 0 12%,transparent 13%),#fff2bb;padding:18px 12px 12px;margin:16px 0 20px;text-align:center}
+.group-photo-title{font:700 clamp(20px,3vw,31px) Fredoka,system-ui,sans-serif;color:#28213f;overflow-wrap:anywhere}
+.group-photo-faces{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px 0 12px}
+.group-photo-person{width:95px;display:flex;align-items:center;flex-direction:column;gap:6px;min-width:0}
+.group-photo-person strong{font-size:12px;line-height:1.25;overflow:hidden;max-width:100%;text-overflow:ellipsis;white-space:nowrap}
+.group-photo-avatar{width:84px;height:84px;display:grid;place-items:center;border:2px solid #292142;border-radius:50%;background:#fff}
+.group-photo-signature{color:#7250d7;font-weight:800;font-size:12px;letter-spacing:.01em}
+@media(max-width:680px){.group-photo-faces{gap:6px}.group-photo-person{width:76px}.group-photo-avatar{width:70px;height:70px}.group-photo-avatar svg{width:66px;height:66px}}
 </style></head>
 <body><main><header><a href="#home" class="brand">dispo<span>potes.</span></a><div class="row"><span id="account" class="profile"></span><a id="profileLink" href="#profile" class="profile-link hide" aria-label="Personnaliser mon avatar">Mon avatar</a><button id="logout" class="btn secondary small hide">Déconnexion</button></div></header><div id="view"></div><div id="status" class="status"></div></main>
 <script type="module">
@@ -427,11 +438,47 @@ try{
  box.innerHTML=old.map(e=>'<a class="item" href="#event/'+encodeURIComponent(e.id)+'"><span><b>'+esc(e.title)+'</b><small>'+fmt(e.startDate)+' — '+fmt(e.endDate)+'</small></span>→</a>').join('')||'<p class="subtle">Aucune ancienne sortie.</p>';
 }catch(e){box.textContent='Archives indisponibles : '+e.message}
 }
+
+function groupPhotoSvg(title,members){
+ const people=members.slice(0,60);
+ const columns=Math.min(5,Math.max(1,people.length));
+ const rows=Math.max(1,Math.ceil(people.length/columns));
+ const width=1000,height=310+rows*190;
+ const xStep=width/columns;
+ const avatars=people.map((p,i)=>{
+   const x=xStep*(i%columns)+xStep/2,y=195+Math.floor(i/columns)*190;
+   const n=esc(String(p.name||'Pote').slice(0,17));
+   return '<g transform="translate('+Math.round(x-65)+','+y+')">'+avatarSVG(profiles[p.id],130)+'</g>'+
+     '<text x="'+Math.round(x)+'" y="'+(y+156)+'" font-size="23" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="#282042">'+n+'</text>';
+ }).join('');
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">'+
+  '<rect width="100%" height="100%" fill="#fff0c3"/><rect x="16" y="16" width="'+(width-32)+'" height="'+(height-32)+'" rx="36" fill="#fff8e5" stroke="#292142" stroke-width="7"/>'+
+  '<circle cx="890" cy="90" r="48" fill="#f9b1d3"/><circle cx="89" cy="'+(height-95)+'" r="55" fill="#b1edd8"/>'+
+  '<text x="500" y="86" font-size="54" text-anchor="middle" font-weight="900" font-family="Arial,sans-serif" fill="#35234c">'+esc(String(title||'Notre bande').slice(0,36))+'</text>'+
+  '<text x="500" y="124" font-size="23" font-family="Arial,sans-serif" text-anchor="middle" fill="#7a4de2">LES POTES RÉUNIS</text>'+avatars+
+  '<text x="500" y="'+(height-42)+'" text-anchor="middle" font-size="24" font-family="Arial,sans-serif" font-weight="700" fill="#7950e9">dispopotes.</text></svg>';
+}
+async function downloadGroupPhoto(title,members){
+ const svg=groupPhotoSvg(title,members);
+ const svgUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+ const img=new Image();
+ try{
+   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Image non générée'));img.src=svgUrl});
+   const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=Number(svg.match(/height="(\d+)"/)[1]);
+   canvas.getContext('2d').drawImage(img,0,0);
+   const blob=await new Promise((resolve,reject)=>canvas.toBlob(x=>x?resolve(x):reject(Error('Conversion PNG impossible')),'image/png'));
+   const url=URL.createObjectURL(blob);
+   const link=document.createElement('a');link.href=url;link.download='dispopotes-groupe.png';document.body.appendChild(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }finally{URL.revokeObjectURL(svgUrl)}
+}
 async function showGroup(id,redirectEvent=''){group=await get('groups/'+id);if(!group)throw Error('Groupe introuvable');groupMembers={};const myMembership=await get('groups/'+id+'/members/'+uid);const isMember=!!myMembership;if(!isMember){html('<a href="#home">← Accueil</a><div class="panel" style="margin-top:20px"><p class="eyebrow">Invitation à un groupe</p><h1>'+esc(group.name)+'</h1><p>Rejoins le groupe pour voir les sorties et indiquer tes disponibilités.</p><button id="joinGroup" class="btn">Rejoindre</button></div>');$('joinGroup').onclick=async()=>{try{await put('groups/'+id+'/members/'+uid,{name:auth.currentUser.displayName||auth.currentUser.email||'Membre',role:'member',joinedAt:fs.serverTimestamp()});await saveMyGroup(id);if(redirectEvent)location.hash='event/'+encodeURIComponent(redirectEvent);else await showGroup(id)}catch(e){status(e.message,true)}};return}
 if(redirectEvent){location.hash='event/'+encodeURIComponent(redirectEvent);return}
 const docs=await list('groups/'+id+'/members');docs.forEach(x=>groupMembers[x.id]=x);await loadProfiles(docs.map(m=>m.id));
-html('<a href="#home" class="subtle">← Mes groupes</a><div class="row wrap" style="margin:18px 0 22px"><div><p class="eyebrow">👋 LA TEAM EST RÉUNIE</p><h1>'+esc(group.name)+'</h1><p class="subtle">'+docs.length+' pote(s) dans le groupe</p></div><button class="btn secondary" id="shareGroup">Copier l’invitation</button></div><div class="cols"><section class="panel"><h2>🔥 Ça arrive bientôt !</h2><div id="groupEvents">Chargement…</div><div style="border-top:1px solid #eee;margin:20px 0"></div><h2>📸 Les souvenirs</h2><div id="pastEvents">Chargement…</div></section><section class="stack"><div class="panel"><h2>🚀 On organise quoi ?</h2><form id="newEvent"><label>Nom de la sortie<input id="eventTitle" maxlength="90" required placeholder="Soirée entre potes"></label><div class="field-row"><div><label>Du</label><input id="start" type="date" required></div><div><label>Au</label><input id="end" type="date" required></div></div><button class="btn" style="margin-top:16px">Créer</button></form></div><a class="game-entry" href="#games/'+encodeURIComponent(id)+'"><span class="game-entry-symbol">VS</span><span><strong>La Récré</strong><small>Shifumi, Quiz et Dessine & Devine</small></span><b>Jouer ↗</b></a><div class="panel"><h2>Membres</h2>'+docs.map(m=>'<div class="member-card">'+avatarOf(m.id,46)+'<span>'+esc(m.name)+'</span>'+(m.role==='owner'?' <span class="pill">Créateur</span>':'')+'</div>').join('')+'</div></section></div>');
-$('shareGroup').onclick=()=>copyLink('#group/'+id);const today=new Date();$('start').value=iso(today.getFullYear(),today.getMonth(),today.getDate());const later=new Date(today);later.setDate(later.getDate()+30);$('end').value=iso(later.getFullYear(),later.getMonth(),later.getDate());
+html('<a href="#home" class="subtle">← Mes groupes</a><div class="row wrap" style="margin:18px 0 22px"><div><p class="eyebrow">👋 LA TEAM EST RÉUNIE</p><h1>'+esc(group.name)+'</h1><p class="subtle">'+docs.length+' pote(s) dans le groupe</p></div><button class="btn secondary" id="shareGroup">Copier l’invitation</button></div><div class="cols"><section class="panel"><h2>🔥 Ça arrive bientôt !</h2><div id="groupEvents">Chargement…</div><div style="border-top:1px solid #eee;margin:20px 0"></div><h2>📸 Les souvenirs</h2><div id="pastEvents">Chargement…</div></section><section class="stack"><div class="panel"><h2>🚀 On organise quoi ?</h2><form id="newEvent"><label>Nom de la sortie<input id="eventTitle" maxlength="90" required placeholder="Soirée entre potes"></label><div class="field-row"><div><label>Du</label><input id="start" type="date" required></div><div><label>Au</label><input id="end" type="date" required></div></div><button class="btn" style="margin-top:16px">Créer</button></form></div><a class="game-entry" href="#games/'+encodeURIComponent(id)+'"><span class="game-entry-symbol">VS</span><span><strong>La Récré</strong><small>Shifumi, Quiz et Dessine & Devine</small></span><b>Jouer ↗</b></a><div class="panel group-photo-panel"><h2>La photo de la bande</h2><p class="subtle">Toute la team avec ses avatars !</p><div class="group-photo"><div class="group-photo-title">'+esc(group.name)+'</div><div class="group-photo-faces">'+docs.map(m=>'<div class="group-photo-person"><div class="group-photo-avatar">'+avatarOf(m.id,84)+'</div><strong>'+esc(m.name)+'</strong></div>').join('')+'</div><div class="group-photo-signature">dispopotes.</div></div><button id="downloadGroupPhoto" type="button" class="btn secondary">Enregistrer la photo PNG</button></div><div class="panel"><h2>Membres</h2>'+docs.map(m=>'<div class="member-card">'+avatarOf(m.id,46)+'<span>'+esc(m.name)+'</span>'+(m.role==='owner'?' <span class="pill">Créateur</span>':'')+'</div>').join('')+'</div></section></div>');
+$('shareGroup').onclick=()=>copyLink('#group/'+id);
+$('downloadGroupPhoto').onclick=async()=>{const b=$('downloadGroupPhoto');b.disabled=true;try{await downloadGroupPhoto(group.name,docs);status('Photo de groupe enregistrée !')}catch(e){status('Photo : '+e.message,true)}finally{b.disabled=false}};
+const today=new Date();$('start').value=iso(today.getFullYear(),today.getMonth(),today.getDate());const later=new Date(today);later.setDate(later.getDate()+30);$('end').value=iso(later.getFullYear(),later.getMonth(),later.getDate());
 $('newEvent').onsubmit=async e=>{e.preventDefault();const title=$('eventTitle').value.trim(),startDate=$('start').value,endDate=$('end').value;if(!title||endDate<startDate||days(startDate,endDate).length>365){status('Période invalide (maximum 365 jours).',true);return}e.submitter.disabled=true;try{const ref=fs.doc(fs.collection(db,'events'));const previous=$('eventTitle').dataset.duplicate?await get('events/'+$('eventTitle').dataset.duplicate):null;await put('events/'+ref.id,{title,groupId:id,createdBy:uid,startDate,endDate,status:'planning',description:(previous?.description||''),location:(previous?.location||''),startTime:(previous?.startTime||''),budget:(previous?.budget||''),confirmedDate:null,createdAt:fs.serverTimestamp(),updatedAt:fs.serverTimestamp()});location.hash='event/'+ref.id}catch(err){status(err.message,true);e.submitter.disabled=false}};
 try{
 const all=await fs.getDocs(fs.query(fs.collection(db,'events'),fs.where('groupId','==',id)));
