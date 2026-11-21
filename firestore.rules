@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    match /events/{eventId} {
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['title','startDate','endDate','createdBy','createdAt']) && request.resource.data.createdBy == request.auth.uid && request.resource.data.title is string && request.resource.data.title.size() <= 90;
+      allow get: if signedIn();
+      allow list, update, delete: if false;
+      match /participants/{participantId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && participantId == request.auth.uid && request.resource.data.keys().hasOnly(['name','dates']) && request.resource.data.name is string && request.resource.data.name.size() <= 40 && request.resource.data.dates is list && request.resource.data.dates.size() <= 366;
+        allow delete: if false;
+      }
+    }
+  }
+}
