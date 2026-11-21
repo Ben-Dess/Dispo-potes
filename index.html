@@ -388,7 +388,35 @@ async function openProfile(){
 function status(msg,err=false){$('status').textContent=msg;$('status').className='status '+(err?'error':'')}
 function html(t){unsubscribe();unsubscribe=()=>{};$('view').innerHTML=t}
 function days(a,b){const out=[],d=new Date(a+'T12:00:00'),end=new Date(b+'T12:00:00');for(let i=0;d<=end&&i<366;i++,d.setDate(d.getDate()+1))out.push(iso(d.getFullYear(),d.getMonth(),d.getDate()));return out}
-async function init(){try{const cfg=await(await fetch('./firebase-config.json')).json();const [app,a,f]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')]);au=a;fs=f;auth=a.getAuth(app.initializeApp(cfg));db=f.getFirestore();await auth.authStateReady();if(auth.currentUser){uid=auth.currentUser.uid;$('account').textContent=auth.currentUser.displayName||auth.currentUser.email;$('logout').classList.remove('hide');$('profileLink').classList.remove('hide')}route()}catch(e){console.error(e);html('<div class="panel"><h2>Impossible de démarrer</h2><p>'+esc(e.message)+'</p></div>')}}
+async function init(){
+ let phase='configuration';
+ try{
+   const response=await fetch('./firebase-config.json',{cache:'no-store'});
+   if(!response.ok)throw Error('Configuration introuvable (HTTP '+response.status+')');
+   const cfg=await response.json();
+   if(!cfg.apiKey||!cfg.projectId||!cfg.appId)throw Error('Configuration Firebase incomplète');
+   phase='bibliothèques Firebase';
+   const [app,a,f]=await Promise.all([
+     import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
+     import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'),
+     import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')
+   ]);
+   phase='authentification';
+   au=a;fs=f;auth=a.getAuth(app.initializeApp(cfg));db=f.getFirestore();
+   await auth.authStateReady();
+   if(auth.currentUser){uid=auth.currentUser.uid;$('account').textContent=auth.currentUser.displayName||auth.currentUser.email;$('logout').classList.remove('hide');$('profileLink').classList.remove('hide')}
+   route();
+ }catch(e){
+   console.error('DispoPotes startup failed at '+phase,e);
+   const text=phase==='configuration'
+     ?'Impossible de récupérer la configuration du site. Vérifie ta connexion puis réessaie.'
+     :phase==='bibliothèques Firebase'
+       ?'Impossible de charger Firebase depuis www.gstatic.com. Vérifie le réseau, le bloqueur de contenus ou le DNS privé, puis réessaie.'
+       :'Impossible d’initialiser ta session Firebase. Réessaie avec une connexion stable.';
+   html('<section class="panel" role="alert"><h2>Impossible de démarrer</h2><p>'+esc(text)+'</p><p class="subtle">Étape : '+esc(phase)+' · '+esc(e?.message||'Erreur réseau')+'</p><button id="retryStart" class="btn">Réessayer</button><p class="subtle">Si ça persiste : essaie un autre réseau (Wi-Fi / données mobiles) ou un autre navigateur.</p></section>');
+   $('retryStart').onclick=()=>{html('<section class="panel"><p>Reconnexion…</p></section>');init()};
+ }
+}
 async function signin(){
  const provider=new au.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
  try{
