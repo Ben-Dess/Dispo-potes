@@ -55,6 +55,135 @@ service cloud.firestore {
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
         request.resource.data.name.size() <= 60;
+
+      // Mini-games are scoped to permanent groups.
+      match /games/{gameId} {
+        function game() {
+          return get(/databases/$(database)/documents/groups/$(groupId)/games/$(gameId)).data;
+        }
+        function gameAfter() {
+          return getAfter(/databases/$(database)/documents/groups/$(groupId)/games/$(gameId)).data;
+        }
+        function isPlayer() {
+          return groupMember(groupId) && request.auth.uid in game().playerIds;
+        }
+        allow get, list: if groupMember(groupId);
+        allow create: if groupMember(groupId)
+          && request.resource.data.keys().hasOnly([
+            'type','ownerId','title','createdAt','updatedAt',
+            'revealed','playerIds','readyIds','prompt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'type','ownerId','title','createdAt','updatedAt',
+            'revealed','playerIds','readyIds','prompt'
+          ])
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.type in ['shifumi','bande','dessin']
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 40
+          && request.resource.data.prompt is string
+          && request.resource.data.prompt.size() <= 160
+          && request.resource.data.revealed == false
+          && request.resource.data.playerIds == [request.auth.uid]
+          && request.resource.data.readyIds == [];
+        allow update: if groupMember(groupId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'playerIds','readyIds','revealed','updatedAt'
+          ])
+          && (
+            // Join the second and final Shifumi slot.
+            (resource.data.type == 'shifumi'
+              && resource.data.playerIds.size() == 1
+              && request.auth.uid != resource.data.playerIds[0]
+              && request.resource.data.playerIds == [
+                resource.data.playerIds[0],request.auth.uid
+              ]
+              && request.resource.data.readyIds == resource.data.readyIds
+              && request.resource.data.revealed == resource.data.revealed)
+            ||
+            // Mark only your own already-submitted Shifumi move as ready.
+            (resource.data.type == 'shifumi'
+              && request.auth.uid in resource.data.playerIds
+              && exists(/databases/$(database)/documents/groups/$(groupId)/games/$(gameId)/moves/$(request.auth.uid))
+              && request.resource.data.playerIds == resource.data.playerIds
+              && request.resource.data.revealed == resource.data.revealed
+              && request.resource.data.readyIds.size() <= 2
+              && request.resource.data.readyIds.hasAll(resource.data.readyIds)
+              && request.resource.data.readyIds.hasAll([request.auth.uid])
+              && request.resource.data.readyIds.hasOnly(resource.data.playerIds))
+            ||
+            // Only the session creator can reveal a poll or drawing.
+            (resource.data.type in ['bande','dessin']
+              && resource.data.ownerId == request.auth.uid
+              && resource.data.revealed == false
+              && request.resource.data.revealed == true
+              && request.resource.data.playerIds == resource.data.playerIds
+              && request.resource.data.readyIds == resource.data.readyIds)
+          );
+        allow delete: if false;
+        match /moves/{playerId} {
+          allow get: if groupMember(groupId)
+            && (request.auth.uid == playerId || game().readyIds.size() == 2);
+          allow list: if groupMember(groupId) && game().readyIds.size() == 2;
+          allow create: if isPlayer() && request.auth.uid == playerId
+            && game().type == 'shifumi' && game().playerIds.size() == 2
+            && request.resource.data.keys().hasOnly(['userId','choice','createdAt'])
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.choice in ['rock','paper','scissors'];
+          allow update, delete: if false;
+        }
+        match /answers/{answerId} {
+          allow get: if groupMember(groupId)
+            && (request.auth.uid == answerId || game().revealed == true);
+          allow list: if groupMember(groupId) && game().revealed == true;
+          allow create: if groupMember(groupId) && game().type == 'bande'
+            && game().revealed == false && request.auth.uid == answerId
+            && request.resource.data.keys().hasOnly(['userId','targetUid','createdAt'])
+            && request.resource.data.userId == request.auth.uid
+            && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.resource.data.targetUid));
+          allow update, delete: if false;
+        }
+        match /secret/{secretId} {
+          allow get: if groupMember(groupId) &&
+            (game().ownerId == request.auth.uid || game().revealed == true);
+          allow list: if false;
+          allow create: if groupMember(groupId)
+            && secretId == 'word'
+            && gameAfter().type == 'dessin'
+            && gameAfter().ownerId == request.auth.uid
+            && request.resource.data.keys().hasOnly(['word'])
+            && request.resource.data.word is string
+            && request.resource.data.word.size() > 0
+            && request.resource.data.word.size() <= 35;
+          allow update, delete: if false;
+        }
+        match /strokes/{strokeId} {
+          allow get, list: if groupMember(groupId);
+          allow create: if groupMember(groupId) && game().type == 'dessin'
+            && game().ownerId == request.auth.uid && game().revealed == false
+            && request.resource.data.keys().hasOnly(['userId','points','createdAt'])
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.points is list
+            && request.resource.data.points.size() > 0
+            && request.resource.data.points.size() <= 100;
+          allow delete: if groupMember(groupId) && game().ownerId == request.auth.uid
+            && game().type == 'dessin' && game().revealed == false;
+          allow update: if false;
+        }
+        match /guesses/{guessId} {
+          allow get, list: if groupMember(groupId);
+          allow create: if groupMember(groupId) && game().type == 'dessin'
+            && game().revealed == false
+            && game().ownerId != request.auth.uid
+            && request.resource.data.keys().hasOnly(['userId','text','createdAt'])
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 60;
+          allow update, delete: if false;
+        }
+      }
+
       match /members/{memberId} {
         // A group invite URL contains an unguessable group id.
         allow get: if signedIn() && (memberId == request.auth.uid || groupMember(groupId));
